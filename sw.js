@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sector-guide-v2';
+const CACHE_NAME = 'sector-guide-v1';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -24,22 +24,9 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return; // let CDN / map tiles pass through
+  // only handle same-origin requests (leave map tiles / CDN to the network)
+  if (url.origin !== self.location.origin) return;
 
-  // data.json: always try the network first so updates show immediately;
-  // fall back to cache only if offline.
-  if (url.pathname.endsWith('data.json')) {
-    event.respondWith(
-      fetch(event.request).then(resp => {
-        const clone = resp.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        return resp;
-      }).catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  // everything else: cache-first for fast, offline-friendly loading
   event.respondWith(
     caches.match(event.request).then(cached => {
       return cached || fetch(event.request).then(resp => {
